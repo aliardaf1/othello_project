@@ -1,91 +1,126 @@
 # main.py
+import time
 from board import Board, BLACK, WHITE
+import ai
+
+# --- YARDIMCI FONKSİYONLAR ---
 
 def get_user_input(board, current_player):
-    """
-    Kullanıcıdan hamle alır, doğrular ve (satır, sütun) olarak döndürür.
-    Kullanıcı 'q' girerse None döndürür (çıkış için).
-    """
-    print(f"Sıra '{current_player}' oyuncusunda.")
-    
+    """İnsan oyuncudan hamle alır"""
+    print(f"\nSıra SİZDE ({current_player}).")
     while True:
-        move_str = input("Hamle girin (örn: d3) veya çıkış için 'q': ").strip().lower()
+        move_str = input("Hamle girin (örn: d3) veya 'q' çıkış: ").strip().lower()
+        if move_str == 'q': return None
 
-        # Çıkış
-        if move_str == 'q':
-            print("Oyun sonlandırılıyor...")
-            return None
-
-        # format kontrolü
         if len(move_str) != 2:
-            print("Hatalı format! Lütfen geçerli format girin (örn: e4).")
+            print("Hatalı format. Örnek: e3")
             continue
 
-        col_char = move_str[0]
-        row_char = move_str[1]
-
-        # Harf ve sayı dönüştür. Sütun (a-h) -> (0-7), Satır (1-8) -> (0-7)
-        if 'a' <= col_char <= 'h':
-            col = ord(col_char) - ord('a') # ASCII değerini kullanarak çeviri
-        else:
-            print("Geçersiz sütun! Harfler a-h arasında olmalı.")
+        col_char, row_char = move_str[0], move_str[1]
+        
+        if not ('a' <= col_char <= 'h' and '1' <= row_char <= '8'):
+            print("Koordinatlar tahta dışında.")
             continue
-        #----------------------------------------------------------------------
-        if '1' <= row_char <= '8':
-            row = int(row_char) - 1
-        else:
-            print("Geçersiz satır! Sayılar 1-8 arasında olmalı.")
-            continue
+            
+        col = ord(col_char) - ord('a')
+        row = int(row_char) - 1
 
-        # kural kontrolü
         if board.is_valid_move(row, col, current_player):
             return (row, col)
         else:
-            print(f"Geçersiz hamle!")
+            print("Geçersiz hamle! (Kurallara uymuyor)")
+
+def get_ai_move(board, current_player, depth, heuristic_func):
+    """Yapay zeka hamlesini hesaplar"""
+    print(f"\nBilgisayar ({current_player}) düşünüyor... (Derinlik: {depth})")
+    start_time = time.time()
+    
+    # ai.py içindeki fonksiyonu çağır
+    move = ai.get_best_move(board, depth, current_player, heuristic_func)
+    
+    end_time = time.time()
+    print(f"AI Hamlesi: {chr(move[1]+97)}{move[0]+1} (Süre: {end_time - start_time:.4f} sn)")
+    return move
+
+# --- ANA OYUN ---
 
 def play_game():
-    game_board = Board()
-    current_player = BLACK # Siyah başlıyor
+    print("--- CSE4082 OTHELLO PROJESİ ---")
     
-    print("--- OTHELLO (REVERSI) ---")
+    # 1. Oyun Modu Seçimi 
+    print("Mod Seçin:")
+    print("1. İnsan vs İnsan")
+    print("2. İnsan vs AI")
+    print("3. AI vs AI")
+    mode = input("Seçim (1-3): ").strip()
     
+    # AI Ayarları
+    ai_depth = 3
+    ai_heuristic = ai.evaluate_h1
+    
+    if mode in ['2', '3']:
+        # Derinlik Seçimi [cite: 37]
+        d_input = input("AI Derinliği (Ply) (Örn: 3, 4, 5): ").strip()
+        if d_input.isdigit(): ai_depth = int(d_input)
+        
+        # Heuristic Seçimi [cite: 38]
+        print("AI Stratejisi Seçin:")
+        print("1. h1: Taş Farkı (Standart)")
+        print("2. h2: Temas Stratejisi (Sizin Tasarımınız)")
+        print("3. h3: Mobilite (Hamle Sayısı)")
+        h_choice = input("Seçim (1-3): ").strip()
+        
+        if h_choice == '2': ai_heuristic = ai.evaluate_h2
+        elif h_choice == '3': ai_heuristic = ai.evaluate_h3
+        else: ai_heuristic = ai.evaluate_h1
+
+    # Oyuncuları Belirle
+    # p1_type: 'human' veya 'ai'
+    if mode == '1':
+        p1_type, p2_type = 'human', 'human'
+    elif mode == '2':
+        p1_type, p2_type = 'human', 'ai' # İnsan Siyah (başlar), AI Beyaz
+    else:
+        p1_type, p2_type = 'ai', 'ai'
+
+    # Tahtayı Başlat
+    board = Board()
+    current_player = BLACK
+    player_types = {BLACK: p1_type, WHITE: p2_type}
+
+    # --- OYUN DÖNGÜSÜ ---
     while True:
-        # anlık durum
-        print("="*30)
-        game_board.display()
+        print("\n" + "="*30)
+        board.display()
+        b_score, w_score = board.get_score()
+        print(f"SKOR: Siyah (X): {b_score} | Beyaz (O): {w_score}")
         
-        # skor
-        black_score, white_score = game_board.get_score()
-        print(f"\nSKOR -> Siyah (X): {black_score} | Beyaz (O): {white_score}")
-        
-        # oyun bitiş kontrolü
-        if not game_board.has_valid_move(BLACK) and not game_board.has_valid_move(WHITE):
+        # Bitiş Kontrolü
+        if not board.has_valid_move(BLACK) and not board.has_valid_move(WHITE):
             print("\nOYUN BİTTİ!")
-            if black_score > white_score:
-                print("Kazanan: SİYAH (X)")
-            elif white_score > black_score:
-                print("Kazanan: BEYAZ (O)")
-            else:
-                print("Sonuç: BERABERE")
-            break 
+            if b_score > w_score: print("KAZANAN: SİYAH (X)")
+            elif w_score > b_score: print("KAZANAN: BEYAZ (O)")
+            else: print("BERABERE")
+            break
             
-        # Sıradaki oyuncunun hamlesi yoksa pas geçecek
-        if not game_board.has_valid_move(current_player):
-            print(f"\n{current_player} oyuncusunun geçerli hamlesi yok. Pas geçiliyor...")
-            
+        # Pas Kontrolü
+        if not board.has_valid_move(current_player):
+            print(f"{current_player} pas geçiyor!")
             current_player = WHITE if current_player == BLACK else BLACK
             continue
             
-        # Hamle iste
-        move = get_user_input(game_board, current_player)
-        
-        if move is None: # Kullanıcı 'q' ile çıkmak isterse
-            break
+        # Hamle Al
+        if player_types[current_player] == 'human':
+            move = get_user_input(board, current_player)
+            if move is None: break # Çıkış
+        else:
+            # AI Hamlesi
+            move = get_ai_move(board, current_player, ai_depth, ai_heuristic)
             
-        # move[0] -> satır, move[1] -> sütun
-        game_board.apply_move(move[0], move[1], current_player)
+        # Hamleyi Uygula
+        board.apply_move(move[0], move[1], current_player)
         
-        # sıradaki oyuncuya geç
+        # Sıra Değiştir
         current_player = WHITE if current_player == BLACK else BLACK
 
 if __name__ == "__main__":
