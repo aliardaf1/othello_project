@@ -3,10 +3,8 @@ import time
 from board import Board, BLACK, WHITE
 import ai
 
-# --- YARDIMCI FONKSİYONLAR ---
 
 def get_user_input(board, current_player):
-    """İnsan oyuncudan hamle alır"""
     print(f"\nSıra SİZDE ({current_player}).")
     while True:
         move_str = input("Hamle girin (örn: d3) veya 'q' çıkış: ").strip().lower()
@@ -31,7 +29,6 @@ def get_user_input(board, current_player):
             print("Geçersiz hamle! (Kurallara uymuyor)")
 
 def get_ai_move(board, current_player, depth, heuristic_func):
-    """Yapay zeka hamlesini hesaplar"""
     print(f"\nBilgisayar ({current_player}) düşünüyor... (Derinlik: {depth})")
     start_time = time.time()
     
@@ -45,7 +42,7 @@ def get_ai_move(board, current_player, depth, heuristic_func):
 # --- ANA OYUN ---
 
 def play_game():
-    print("--- CSE4082 OTHELLO PROJESİ ---")
+    print("--- Othello ---")
     
     # 1. Oyun Modu Seçimi 
     print("Mod Seçin:")
@@ -59,27 +56,25 @@ def play_game():
     ai_heuristic = ai.evaluate_h1
     
     if mode in ['2', '3']:
-        # Derinlik Seçimi [cite: 37]
+        # Derinlik Seçimi
         d_input = input("AI Derinliği (Ply) (Örn: 3, 4, 5): ").strip()
         if d_input.isdigit(): ai_depth = int(d_input)
         
-        # Heuristic Seçimi [cite: 38]
+        # Heuristic Seçimi
         print("AI Stratejisi Seçin:")
-        print("1. h1: Taş Farkı (Standart)")
-        print("2. h2: Temas Stratejisi (Sizin Tasarımınız)")
-        print("3. h3: Mobilite (Hamle Sayısı)")
+        print("1. h1: Taş Farkı")
+        print("2. h2: Temas Stratejisi")
+        print("3. h3: Hamle Sayısı")
         h_choice = input("Seçim (1-3): ").strip()
         
         if h_choice == '2': ai_heuristic = ai.evaluate_h2
         elif h_choice == '3': ai_heuristic = ai.evaluate_h3
         else: ai_heuristic = ai.evaluate_h1
 
-    # Oyuncuları Belirle
-    # p1_type: 'human' veya 'ai'
     if mode == '1':
         p1_type, p2_type = 'human', 'human'
     elif mode == '2':
-        p1_type, p2_type = 'human', 'ai' # İnsan Siyah (başlar), AI Beyaz
+        p1_type, p2_type = 'human', 'ai' 
     else:
         p1_type, p2_type = 'ai', 'ai'
 
