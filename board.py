@@ -130,6 +130,70 @@ class Board:
                 if self.grid[r][c] == EMPTY:
                     return False
         return True
+    
+    def get_tiles_to_flip(self, row, col, tile):
+        if self.grid[row][col] != '.' or not self.is_on_board(row, col):
+            return []
+
+        opponent = WHITE if tile == BLACK else BLACK
+        tiles_to_flip = []
+
+        directions = [
+            (-1, -1), (-1, 0), (-1, 1),
+            ( 0, -1),         ( 0, 1),
+            ( 1, -1), ( 1, 0), ( 1, 1)
+        ]
+
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            line = []
+
+            # İlk kare rakip olmalı
+            if not self.is_on_board(r, c) or self.grid[r][c] != opponent:
+                continue
+
+            # Rakip taşları topla
+            while True:
+                r += dr
+                c += dc
+                if not self.is_on_board(r, c):
+                    break
+
+                if self.grid[r][c] == opponent:
+                    line.append((r, c))
+                    continue
+
+                # Kendi taşımız → bu direction geçerli
+                if self.grid[r][c] == tile:
+                    tiles_to_flip.extend(line)
+                break
+
+        return tiles_to_flip
+    
+    def apply_move_and_get_flipped(self, row, col, tile):
+        flipped = self.get_tiles_to_flip(row, col, tile)
+
+        if not flipped:
+            return []
+
+        self.grid[row][col] = tile
+        for r, c in flipped:
+            self.grid[r][c] = tile
+
+        return flipped
+    
+    def undo_move(self, row, col, tile, flipped_tiles):
+        # taş kaldır
+        self.grid[row][col] = '.'
+    
+        opponent = WHITE if tile == BLACK else BLACK
+    
+        # flip edilen taşları geri çevir
+        for r, c in flipped_tiles:
+            self.grid[r][c] = opponent
+
+
+
 
 if __name__ == "__main__":
     b = Board()
