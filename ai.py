@@ -30,29 +30,13 @@ def evaluate_h1(board, player_tile):
         
     return my_score - opponent_score
 
+
 def evaluate_h2(board, player_tile):
     """
-    Heuristic 2: Hareketlilik (Mobility)
-    = (Benim geçerli hamlelerim) - (Rakibin geçerli hamleleri), normalize edilmiş.
-    """
-    opponent_tile = WHITE if player_tile == BLACK else BLACK
-
-    my_moves = len(board.get_valid_moves(player_tile))
-    opponent_moves = len(board.get_valid_moves(opponent_tile))
-
-    # İkimizin de hamlesi yoksa konum mobilite açısından nötr
-    if my_moves + opponent_moves == 0:
-        return 0
-
-    # -100 .. +100 aralığına normalize et
-    return 100 * (my_moves - opponent_moves) / (my_moves + opponent_moves)
-
-def evaluate_h3(board, player_tile):
-    """
-    Heuristic 3: Konumsal Ağırlıklar
+    Heuristic 2: Konumsal Ağırlıklar
     Tahtadaki her taş için:
-    - Benim taşım ise o karenin ağırlığını + ekle,
-    - Rakibin taşı ise o karenin ağırlığını - ekle.
+    - Benim taşım ise o karenin ağırlığını ekle,
+    - Rakibin taşı ise o karenin ağırlığını çıkar.
     """
     opponent_tile = WHITE if player_tile == BLACK else BLACK
 
@@ -67,6 +51,69 @@ def evaluate_h3(board, player_tile):
             # EMPTY ('.') ise 0 eklenir, yani etkisiz
 
     return score
+
+def evaluate_h3(board, player_tile):
+    """
+    Heuristic 3: Hareketlilik (Mobility)
+    = (Benim geçerli hamlelerim) - (Rakibin geçerli hamleleri), normalize edilmiş.
+    """
+    opponent_tile = WHITE if player_tile == BLACK else BLACK
+
+    my_moves = len(board.get_valid_moves(player_tile))
+    opponent_moves = len(board.get_valid_moves(opponent_tile))
+
+    # İkimizin de hamlesi yoksa konum mobilite açısından nötr
+    if my_moves + opponent_moves == 0:
+        return 0
+
+    # -100 .. +100 aralığına normalize et
+    return 100 * (my_moves - opponent_moves) / (my_moves + opponent_moves)
+
+
+# extra olarak eklediğimiz bir fonksiyon
+# öncekilere göre daha kompleks
+# 4 farklı heuristic'in birleşimi olarak çalışıyor
+def evaluate_hybrid(board, player_tile):
+    """
+    Hybrid heuristic:
+    - Mobility
+    - Corner control
+    - Positional weights
+    - Coin parity (late game)
+    """
+
+    # oyunun hangi fazda olduğunu taş sayısına göre belirliyor
+    black, white = board.get_score()
+    total_discs = black + white
+
+    # Bileşenler
+    parity = coin_parity(board, player_tile)
+    mob = mobility(board, player_tile)
+    pos = positional_score(board, player_tile)
+
+    my_corners, opp_corners = count_corners(board, player_tile)
+    corner_score = 25 * (my_corners - opp_corners)
+
+    # --- Ağırlıklandırma ---
+    # Early / Mid game
+    if total_discs < 40:
+        return (
+            1.0 * mob +
+            1.0 * corner_score +
+            0.5 * pos
+        )
+
+    # Late game
+    else:
+        return (
+            2.0 * parity +
+            0.5 * mob +
+            1.5 * corner_score
+        )
+
+
+
+# -------------- ESKİ HEURİSTİKLER --------------
 
 
 
@@ -113,6 +160,7 @@ def evaluate_h3(board, player_tile):
 #     opponent_moves = len(board.get_valid_moves(opponent_tile))
 #     
 #     return my_moves - opponent_moves
+
 
 
 
@@ -212,3 +260,61 @@ def get_best_move(board, depth, player_tile, heuristic_func=evaluate_h1):
     # Kök çağrısında maximizing_player her zaman True
     _, best_move = minimax(board, depth, -INF, INF, True, player_tile, heuristic_func)
     return best_move
+
+
+
+def count_corners(board, player_tile):
+    opponent_tile = WHITE if player_tile == BLACK else BLACK
+    corners = [(0,0), (0,7), (7,0), (7,7)]
+
+    my_corners = 0
+    opp_corners = 0
+
+    for r, c in corners:
+        if board.grid[r][c] == player_tile:
+            my_corners += 1
+        elif board.grid[r][c] == opponent_tile:
+            opp_corners += 1
+
+    return my_corners, opp_corners
+
+
+def coin_parity(board, player_tile):
+    black, white = board.get_score()
+
+    if black + white == 0:
+        return 0
+
+    if player_tile == BLACK:
+        return 100 * (black - white) / (black + white)
+    else:
+        return 100 * (white - black) / (black + white)
+
+
+def mobility(board, player_tile):
+    opponent_tile = WHITE if player_tile == BLACK else BLACK
+
+    my_moves = len(board.get_valid_moves(player_tile))
+    opp_moves = len(board.get_valid_moves(opponent_tile))
+
+    if my_moves + opp_moves == 0:
+        return 0
+
+    return 100 * (my_moves - opp_moves) / (my_moves + opp_moves)
+
+
+def positional_score(board, player_tile):
+    opponent_tile = WHITE if player_tile == BLACK else BLACK
+    score = 0
+
+    for r in range(BOARD_SIZE):
+        for c in range(BOARD_SIZE):
+            if board.grid[r][c] == player_tile:
+                score += POSITION_WEIGHTS[r][c]
+            elif board.grid[r][c] == opponent_tile:
+                score -= POSITION_WEIGHTS[r][c]
+
+    return score
+
+
+

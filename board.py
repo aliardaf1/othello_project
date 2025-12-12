@@ -60,13 +60,13 @@ class Board:
             
             found_opponent = False
             
-            # Bu yönde rakip taş olduğu sürece ilerle (Adım adım git)
+            # Bu yönde rakip taş olduğu sürece ilerle (adım adım git)
             while self.is_on_board(current_row, current_col) and self.grid[current_row][current_col] == other_tile:
                 current_row += row_step
                 current_col += col_step
                 found_opponent = True
             
-            # Zincirin sonunda KENDİ taşımızı bulduysak bu yön geçerlidir
+            # Zincirin sonunda kendi taşımızı bulduysak bu yön geçerlidir
             if found_opponent and self.is_on_board(current_row, current_col) and self.grid[current_row][current_col] == tile:
                 return True
                 
@@ -163,7 +163,7 @@ class Board:
                     line.append((r, c))
                     continue
 
-                # Kendi taşımız → bu direction geçerli
+                # Kendi taşımız ise bu yön geçerli
                 if self.grid[r][c] == tile:
                     tiles_to_flip.extend(line)
                 break

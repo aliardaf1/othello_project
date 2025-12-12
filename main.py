@@ -48,9 +48,10 @@ def select_heuristic(prompt_prefix="AI"):
     while True:
         print(f"{prompt_prefix} Stratejisi Seçin:")
         print("1. h1: Taş Farkı")
-        print("2. h2: Hareketlilik (Hamle Sayısı)")
-        print("3. h3: Kare Ağırlıkları")
-        h_choice = input("Seçim (1-3): ").strip()
+        print("2. h2: Kare Ağırlıkları")
+        print("3. h3: Hareketlilik (Hamle Sayısı)")
+        print("4. h4: Hybrid (Mobility + Corner + Position + Parity)")
+        h_choice = input("Seçim (1-4): ").strip()
 
         if h_choice == '1':
             return ai.evaluate_h1
@@ -58,24 +59,26 @@ def select_heuristic(prompt_prefix="AI"):
             return ai.evaluate_h2
         elif h_choice == '3':
             return ai.evaluate_h3
+        elif h_choice == '4':
+            return ai.evaluate_hybrid
         else:
-            print("Geçersiz seçim, tekrar deneyin.")
+            print("Geçersiz seçim. ")
 
 
 def select_depth(prompt_prefix="AI"):
     while True:
-        d_input = input(f"{prompt_prefix} Derinliği (Ply) (Örn: 3, 4, 5): ").strip()
+        d_input = input(f"{prompt_prefix} Derinlik: ").strip()
         if d_input.isdigit() and int(d_input) > 0:
             return int(d_input)
-        print("Geçersiz seçim, pozitif bir tam sayı girin.")
+        print("Geçersiz seçim. ")
 
 
 def play_game():
     print("--- Othello ---")
 
-    # 1. Oyun Modu Seçimi
+    # Oyun Modu Seçimi
     while True:
-        print("Mod Seçin:")
+        print("Mod: ")
         print("1. İnsan vs İnsan")
         print("2. İnsan vs AI")
         print("3. AI vs AI")
@@ -85,47 +88,40 @@ def play_game():
         print("Geçersiz seçim, tekrar deneyin.")
 
     # AI Ayarları
-    # İnsan vs AI için: sadece beyaz AI kullanılıyor (varsayım)
-    # AI vs AI için: siyah ve beyaz için ayrı derinlik & heuristic
     ai_depth_black = 3
     ai_depth_white = 3
     ai_heuristic_black = ai.evaluate_h1
     ai_heuristic_white = ai.evaluate_h1
 
     if mode == '2':
-        # İnsan vs AI: AI beyaz varsayalım (senin eski kodundaki gibi p1=human, p2=ai)
+        # İnsan vs AI: AI beyazı oynuyor (O)
         ai_depth_white = select_depth("Beyaz AI")
         ai_heuristic_white = select_heuristic("Beyaz AI")
 
     elif mode == '3':
-        # AI vs AI: HER İKİSİ için derinlik ve heuristic ayrı ayrı seçilecek
+        # AI vs AI: Depth ve heuristic ayrı ayrı seçiliyor
 
-        # Siyah AI (X)
         print("\n--- SİYAH AI (X) Ayarları ---")
         ai_depth_black = select_depth("Siyah AI")
         ai_heuristic_black = select_heuristic("Siyah AI")
 
-        # Beyaz AI (O)
         print("\n--- BEYAZ AI (O) Ayarları ---")
         ai_depth_white = select_depth("Beyaz AI")
         ai_heuristic_white = select_heuristic("Beyaz AI")
 
-    # Oyuncu tipleri
     if mode == '1':
         p1_type, p2_type = 'human', 'human'
     elif mode == '2':
-        # İnsan vs AI: Siyah = İnsan, Beyaz = AI
         p1_type, p2_type = 'human', 'ai'
     else:
-        # AI vs AI
         p1_type, p2_type = 'ai', 'ai'
 
-    # Tahtayı Başlat
+    # Tahtayı başlat
     board = Board()
     current_player = BLACK
     player_types = {BLACK: p1_type, WHITE: p2_type}
 
-    # --- OYUN DÖNGÜSÜ ---
+    # oyun döngüsü
     while True:
         print("\n" + "=" * 30)
         board.display()
@@ -169,10 +165,8 @@ def play_game():
                 current_player = WHITE if current_player == BLACK else BLACK
                 continue
 
-        # Hamleyi Uygula
         board.apply_move(move[0], move[1], current_player)
 
-        # Sıra Değiştir
         current_player = WHITE if current_player == BLACK else BLACK
 
 
