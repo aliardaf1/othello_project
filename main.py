@@ -51,6 +51,7 @@ def select_heuristic(prompt_prefix="AI"):
         print("2. h2: Kare Ağırlıkları")
         print("3. h3: Hareketlilik (Hamle Sayısı)")
         print("4. h4: Hybrid (Mobility + Corner + Position + Parity)")
+        print("5. Best")
         h_choice = input("Seçim (1-4): ").strip()
 
         if h_choice == '1':
@@ -61,6 +62,8 @@ def select_heuristic(prompt_prefix="AI"):
             return ai.evaluate_h3
         elif h_choice == '4':
             return ai.evaluate_hybrid
+        elif h_choice == '5':
+            return ai.evaluate_ultimate
         else:
             print("Geçersiz seçim. ")
 
